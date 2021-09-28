@@ -57,7 +57,7 @@ export async function replaceTscAliasPaths(
 
   assert(existsSync(configFile), `Invalid file path => ${configFile}`);
 
-  let { baseUrl, outDir, paths } = loadConfig(configFile);
+  let { baseUrl, outDir, paths, rootDir = './' } = loadConfig(configFile);
   if (options.outDir) {
     outDir = options.outDir;
   }
@@ -72,6 +72,7 @@ export async function replaceTscAliasPaths(
 
   const outPath = normalizePath(normalize(configDir + '/' + outDir));
 
+  const rootPath = normalizePath(normalize(configDir + '/' + rootDir));
   const confDirParentFolderName: string = basename(configDir);
 
   let hasExtraModule = false;
@@ -128,6 +129,7 @@ export async function replaceTscAliasPaths(
         shouldPrefixMatchWildly: alias.endsWith('*'),
         prefix,
         basePath,
+        isInProjectAndNotInRootDir: true,
         path,
         paths: _paths,
         isExtra
@@ -171,6 +173,12 @@ export async function replaceTscAliasPaths(
       alias.basePath = normalizePath(normalize(`${configDir}/${outDir}`));
       alias.isExtra = false;
     }
+    const tmp = normalizePath(
+      normalize(`${configDir}/${baseUrl}/${alias.path}`)
+    );
+    alias.isInProjectAndNotInRootDir = tmp.includes(configDir)
+      ? !tmp.includes(rootPath)
+      : false;
   });
 
   const replaceImportStatement = ({
@@ -200,6 +208,11 @@ export async function replaceTscAliasPaths(
         requiredModule.startsWith(alias.prefix + '/');
 
     if (isAlias) {
+      if (alias.isInProjectAndNotInRootDir && !alias.isExtra) {
+        alias.basePath = normalizePath(
+          alias.basePath.replace(normalize(outDir), '')
+        );
+      }
       let absoluteAliasPath = getAbsoluteAliasPath(alias.basePath, alias.path);
       let relativeAliasPath: string = normalizePath(
         relative(dirname(file), absoluteAliasPath)

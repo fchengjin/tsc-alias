@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "allowJs": false,
+    "rootDir": "src",
+    "paths": {
+      "@controllers/*": ["./src/controllers/*"],
+      "@lib/*": ["./lib/*"]
+    }
+  }
+}
